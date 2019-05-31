@@ -1,2 +1,2 @@
-# L-i-T-codes
+# L(i)T Codes
 Experiments with fountain codes
