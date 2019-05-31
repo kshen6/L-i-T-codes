@@ -66,26 +66,31 @@ class Encoder():
             seed += 1
             counter += 1
 
-class Fountain():
-    def __init__(self, network):
-        self.network = network
-    
-    def send_over_network(self):
-        raise NotImplementedError()
-
 class Decoder():
-    def __init__(self):
+    def __init__(self, num_blocks):
         self.received = []
-        self.belief = []
+        self.belief = [None] * num_blocks
+        self.num_blocks = num_blocks
     
     def incorporate(self, packet):
+        packet.recover_source()
         self.received.append(packet)
-        self.propagate_beliefs()
+        if len(self.received) >= self.num_blocks:
+            self.propagate_beliefs([-1])
     
-    def propagate_beliefs(self):
-        pass
-
-    def decode(self, packets):
-        for p in packets:
-            p.recover_source()
-        self.packets = packets
+    def propagate_beliefs(self, index = None):
+        if all(s is None for s in self.belief):
+            # beginning our belief - search for symbol with degree 1
+            deg_one_symbols = [(i, r) for i, r in enumerate(self.received) if r.degree == 1]
+            if len(deg_one_symbols) == 0: # decoding failed
+                raise "decoding failed, no point of entry"
+            for _, s in deg_one_symbols:
+                self.belief[s.indices[0]] = s.data
+            index = [item[0] for item in deg_one_symbols]
+        for item in index:
+            for i, r in enumerate(self.received):
+                if r == item:
+                    pass
+                if item in r.indices:
+                    r.data ^= self.received[item].data
+                    r.indices.remove(item)
