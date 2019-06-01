@@ -1,0 +1,3 @@
+[submodule "libRaptorQ"]
+	path = libRaptorQ
+	url = https://github.com/LucaFulchir/libRaptorQ.git
