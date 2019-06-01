@@ -1,6 +1,6 @@
 import math
 
-def ideal_soliton(N):
+def ideal_soliton(N, **kwargs):
     '''
     generate list of probabilities corresponding to ideal
     soliton distribution
