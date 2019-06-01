@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # build sender and receiver
     receiver, sender, = Receiver(), Sender()
 
-    pr = Process(target=receiver.run, args=(parseArgs(),)) # spawn receiver process
+    pr = Process(target=receiver.run, args=(parseArgs(), )) # spawn receiver process
     ps = Process(target=sender.run, args=(parseArgs(), )) # spawn sender process
 
     # begin processes
