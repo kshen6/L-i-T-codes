@@ -8,12 +8,32 @@ where -proto can be -tcp or -udp.
 import socket # for socket
 import sys # for command line arguments
 
-# local host IP address listen on
-IP = "127.0.0.1"
-# port we are listening on
-PORT = 5005
-# constants that define what protocol to use
-PROTOS = [socket.SOCK_DGRAM, socket.SOCK_STREAM]
+class Receiver():
+    """
+    Sender class, meant to represent the sender end of communication
+    Sender.run is built to be run by a subprocess
+    """
+    def __init__(self):
+        # local host IP address listen on
+        self.ip = "127.0.0.1"
+        # port we are listening on
+        self.port = 5005
+        # constants that define what protocol to use
+        self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM]
+
+    # program run by receiver process
+    def run(self, proto: int):
+        """
+        runs receiver, using the protocol described by the index proto
+        """
+        # create socket to listen on
+        sock = socket.socket(socket.AF_INET, # Internet
+                             self.protos[proto]) # UDP
+        # bind socket to our IP and PORT
+        sock.bind((self.ip, self.port))
+        while True:
+            data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+            print('received message:', data.decode(), 'from ip: ', addr[0], ', port:', addr[1])
 
 def parseArgs():
     """
@@ -31,13 +51,5 @@ def parseArgs():
         exit(1)
 
 if __name__ == '__main__':
-    # create socket to listen on
-    sock = socket.socket(socket.AF_INET, # Internet
-                         PROTOS[parseArgs()]) # UDP
-    # bind socket to our IP and PORT
-    sock.bind((IP, PORT))
-
-    # continurally listen and print out message
-    while True:
-        data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-        print('received message:', data.decode(), 'from ip: ', addr[0], ', port:', addr[1])
+    r = Receiver()
+    r.run(parseArgs())
