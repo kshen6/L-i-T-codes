@@ -1,0 +1,9 @@
+stages:
+  - testbuild
+
+job1:
+  stage: testbuild
+  script: mkdir build; cd build; cmake -DCMAKE_BUILD_TYPE=Release ../; make everything;
+  
+
+
