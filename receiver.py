@@ -27,8 +27,7 @@ class Receiver():
         """
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            print('Received message:', data.decode(), \
-                  '   from ip:', addr[0], 'port:', addr[1])
+            print'Received message:', data.decode(), '   from ip:', addr[0], 'port:', addr[1]
 
     def runTCP(self, sock):
         sock.listen()
@@ -36,23 +35,23 @@ class Receiver():
         print('Connected to:', addr)
         while True:
             data = conn.recvfrom(1024) # buffer size is 1024 bytes
-            print('received message:', data)
+            print 'received message:', data
             # if not data:
             #     break
             # conn.sendall(data)
 
     # program run by receiver process
-    def run(self, proto: int):
+    def run(self, proto):
         """
         runs receiver, using the protocol described by the index proto
         """
         # create socket to listen on
-        with socket.socket(socket.AF_INET,
-                           self.protos[proto]) as sock:
-            # bind socket to our IP and PORT
-            sock.bind((self.ip, self.port))
-            if   proto == 0: self.runUDP(sock)
-            elif proto == 1: self.runTCP(sock)
+        sock =  socket.socket(socket.AF_INET,
+                           self.protos[proto])
+        # bind socket to our IP and PORT
+        sock.bind((self.ip, self.port))
+        if   proto == 0: self.runUDP(sock)
+        elif proto == 1: self.runTCP(sock)
 
 
 def parseArgs():

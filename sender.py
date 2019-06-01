@@ -54,16 +54,16 @@ class Sender():
             print('sending: ', self.getMessage())
             time.sleep(2)
 
-    def run(self, proto: int):
+    def run(self, proto):
         """
         runs sender, using the protocol described by the index proto
         """
-        print('targeting IP:', self.ip, 'target port:', self.port)
-        print('message:', self.getMessage())
+        print 'targeting IP:', self.ip, 'target port:', self.port
+        print 'message:', self.getMessage()
         # open socket as sock
-        with socket.socket(socket.AF_INET, self.protos[proto]) as sock:
-            if   proto == 0: self.runUDP(sock)
-            elif proto == 1: self.runTCP(sock)
+        sock = socket.socket(socket.AF_INET, self.protos[proto])
+        if   proto == 0: self.runUDP(sock)
+        elif proto == 1: self.runTCP(sock)
 
 
 def parseArgs():
