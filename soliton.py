@@ -9,7 +9,7 @@ def ideal_soliton(N):
     p = [1 / N] + [1 / ((k + 1) * k) for k in range(1, N)]
     return p
 
-def robust_soliton(N, M, d):
+def robust_soliton(N, **kwargs):
     '''
     generate list of probabilities corresponding to robust
     soliton distribution
@@ -17,6 +17,7 @@ def robust_soliton(N, M, d):
     :param M - integer < N where there will be another spike
     :param d - failure probability
     '''
+    M, d = kwargs['M'], kwargs['d']
     R = N / M
     t = [0] * N
     for i in range(1, M):
