@@ -30,7 +30,7 @@ class Receiver():
             print'Received message:', data.decode(), '   from ip:', addr[0], 'port:', addr[1]
 
     def runTCP(self, sock):
-        sock.listen()
+        sock.listen(1)
         conn, addr = sock.accept()
         print('Connected to:', addr)
         while True:

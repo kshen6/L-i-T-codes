@@ -5,17 +5,23 @@ To create a sender, run
     python sender.py [-proto]
 where -proto can be -tcp or -udp.
 
+Note also that we define NOISE as an intializing variable for the Sender class
+We replicate noise in the chanel then as just the probability that the Sender
+sends a packet or not
 """
 import socket # for socket
 import sys # for command line arguments
+import random # for calculation of if to send packet
 import time # for wait
 
 class Sender():
     """
     Sender class, meant to represent the sender end of communication
     Sender.run is built to be run by a subprocess
+
+    self.noise refers to the probability that sender does not send a packet
     """
-    def __init__(self):
+    def __init__(self, noise = 0.0):
         self.message = "hi there fren"
         # local host IP address to send to, we are sending a message to ourself
         self.ip = "127.0.0.1"
@@ -23,6 +29,7 @@ class Sender():
         self.port = 5008
         # constants that define what protocol to use
         self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM]
+        self.noise = noise
 
     def getMessage(self):
         """
@@ -33,11 +40,12 @@ class Sender():
     def runUDP(self, sock):
         """
         runs UDP protocol on socket sock
+        with probability noise, do not send packet
         """
         # just send entire message without check for completeness
         while True:
             # send message to receiver at IP, PORT
-            sock.sendto(self.getMessage().encode(), (self.ip, self.port))
+            if (self.noise < random.random()): sock.sendto(self.getMessage().encode(), (self.ip, self.port))
             time.sleep(1)
 
     def runTCP(self, sock):
@@ -48,7 +56,7 @@ class Sender():
         sock.connect((self.ip, self.port))
         # continue to send massage until...
         while True:
-            sock.sendall(self.getMessage().encode())
+            if (self.noise < random.random()): sock.sendall(self.getMessage().encode())
             # data = sock.recv(1024)
             # print('Received', repr(data))
             print('sending: ', self.getMessage())
