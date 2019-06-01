@@ -1,34 +1,65 @@
 from libraptorq import RQEncoder
 from libraptorq import RQDecoder
 
-data = 'some input string' * 500
 
-# Data size must be divisible by RQEncoder.data_size_div
-data_len, n = len(data), RQEncoder.data_size_div
-if data_len % n: data += '\0' * (n - data_len % n)
+'''
+The encode function for RaptorQ codes.
 
-with RQEncoder(data, min_subsymbol_size=4, symbol_size=16, max_memory=200) as enc:
+:param opts: List of arguments specifying parameters for RQEncoder or RQDecoder in  the form
+       (min_subsymbol_size, symbol_size, max_memory)
 
-  symbols = dict()
-  oti_scheme, oti_common = enc.oti_scheme, enc.oti_common
-  print oti_common, oti_scheme
+:param data: Data to be encoded
 
-  for block in enc:
-    symbols.update(block.encode_iter(repair_rate=0))
+:return: Tuple of (data_len, oti_scheme, oti_common, symbols)
+'''
+def encode(opts, data):
+    # Data size must be divisible by RQEncoder.data_size_div
+    data_len, n = len(data), RQEncoder.data_size_div
+    if data_len % n: data += '\0' * (n - data_len % n)
+    
+    # Set default values for options
+    min_subsymbol_size = 4
+    symbol_size= 16
+    max_memory= 200
 
-data_encoded = data_len, oti_scheme, oti_common, symbols
-print data
-print data_encoded[3]
+    # If options provided
+    if len(opts) > 0:
+        min_subsymbol_size, symbol_size, max_memory = opts
 
+    
+    with RQEncoder(data, min_subsymbol_size, symbol_size, max_memory) as enc:
+        symbols = dict()
+        oti_scheme, oti_common = enc.oti_scheme, enc.oti_common
+        print oti_common, oti_scheme
 
+        for block in enc:
+            symbols.update(block.encode_iter(repair_rate=0))
 
+        data_encoded = data_len, oti_scheme, oti_common, symbols
+    
+    # Print original data & encoded data symbols
+    # print data
+    # print data_encoded[3]
 
-data_len, oti_scheme, oti_common, symbols = data_encoded
+    # Return data length, oti_scheme, oti_common, and symbols,
+    # with symbols being the encoded data
+    return data_encoded
+    
 
-with RQDecoder(oti_common, oti_scheme) as dec:
-  for sym_id, sym in symbols.viewitems(): dec.add_symbol(sym, sym_id)
+'''
+The decode function for RaptorQ codes.
 
-  data_decoded = dec.decode()[:data_len]
+:param data: Tuple containing encoded data – (data_len, oti_scheme, oti_common, symbols)
+'''
+def decode(data):
+    data_len, oti_scheme, oti_common, symbols = data
 
-print data_decoded
+    with RQDecoder(oti_common, oti_scheme) as dec:
+        for sym_id, sym in symbols.viewitems(): dec.add_symbol(sym, sym_id)
+
+        data_decoded = dec.decode()[:data_len]
+
+    # print data_decoded
+
+    return data_decoded
 
