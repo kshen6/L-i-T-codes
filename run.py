@@ -84,7 +84,6 @@ class Receiver():
             print('ooh, I got a letter! It says: ', mes)
 
 
-
 if __name__ == '__main__':
     # Define thta 30% of packages get lost
     NOISE = 0.3
