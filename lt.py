@@ -98,7 +98,7 @@ class Decoder():
             self.num_blocks = packet.num_blocks
             self.belief = [None] * self.num_blocks
         self.received.append(packet)
-        if self.num_packets % 10 == 0:
+        if self.num_packets % 100 == 0:
             self.decode()
     
     def decode(self):

@@ -27,7 +27,7 @@ from sender import Sender
 
 if __name__ == '__main__':
     # Defined constants to test
-    NOISE = 0.2
+    NOISE = 0.4
     file = 'Harry_Pottter_and_the_Sorcerer.txt'
     # file = 'stanford.png'
     # file = 'Green_Eggs_and_Ham.txt'
