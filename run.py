@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # spawn sender
     send_pid = os.fork()
     if send_pid == 0:
-        sender = Sender(parseArgs(), file, noise=NOISE, packet_size=50)
+        sender = Sender(parseArgs(), file, noise=NOISE, packet_size = 50)
         sender.run()
         exit(0)
 
