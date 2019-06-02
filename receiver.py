@@ -1,3 +1,4 @@
+from __future__ import division
 """
 receiver.py
 
@@ -7,6 +8,8 @@ where -proto can be -tcp or -udp.
 """
 import socket # for socket
 import sys # for command line arguments
+from lt import Decoder
+import pickle
 
 class Receiver():
     """
@@ -14,6 +17,7 @@ class Receiver():
     Sender.run is built to be run by a subprocess
     """
     def __init__(self):
+        self.d = Decoder()
         # local host IP address listen on
         self.ip = "127.0.0.1"
         # port we are listening on
@@ -27,15 +31,23 @@ class Receiver():
         """
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            print'Received message:', data.decode(), '   from ip:', addr[0], 'port:', addr[1]
+            data = pickle.loads(data)
+            print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
+            self.d.update_belief(data)
+            if all(e is not None for e in self.d.belief):
+                print 'Completed decoding'
 
     def runTCP(self, sock):
         sock.listen(1)
         conn, addr = sock.accept()
         print('Connected to:', addr)
         while True:
-            data = conn.recvfrom(1024) # buffer size is 1024 bytes
+            data, addr = conn.recvfrom(1024) # buffer size is 1024 bytes
+            data = pickle.loads(data)
             print 'received message:', data
+            self.d.update_belief(data)
+            if all(e is not None for e in self.d.belief):
+                print 'Completed decoding'
             # if not data:
             #     break
             # conn.sendall(data)

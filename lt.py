@@ -1,14 +1,15 @@
+from __future__ import division
 import numpy as np
 import random
 import matplotlib.pyplot as plt
 from soliton import ideal_soliton, robust_soliton
 
-def xor(l1, l2):
+def xor(s1, s2):
     '''
     perform component-wise xor
     '''
-    assert len(l1) == len(l2), 'cannot xor if unequal size'
-    return [a ^ b for a,b in zip(l1, l2)]
+    assert len(s1) == len(s2), 'cannot xor if unequal size'
+    return ''.join(str(int(a)^int(b)) for a,b in zip(s1,s2))
 
 class Packet():
     '''
@@ -37,8 +38,8 @@ class Packet():
     def __str__(self):
         ind = self.indices if hasattr(self, 'indices') else None
         return 'packet object data: {} \n degree: {} \n num blocks: '.format(self.data, self.degree) \
-            + '{} \n seed: {} \n indices: {} \n neighbors: {}'.format(self.num_blocks, \
-                self.seed, ind, self.neighbors)
+            + '{} \n seed: {} \n indices: {}'.format(self.num_blocks, \
+                self.seed, ind)
 
 class Encoder():
     def create_blocks(self, data, blk_sz, pad_with=0):
@@ -50,7 +51,7 @@ class Encoder():
         '''
         self.data = data
         blocks = [self.data[i:i + blk_sz] for i in range(0, len(self.data), blk_sz)]
-        blocks[-1] += [0] * (blk_sz - len(blocks[-1]))
+        blocks[-1] += '0' * (blk_sz - len(blocks[-1]))
         self.blocks = blocks
     
     def encode(self, seed, soliton, M = None, d = None, num_to_transmit = float('inf')):

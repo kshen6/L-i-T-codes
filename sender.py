@@ -1,3 +1,4 @@
+from __future__ import division
 """
 sender.py
 
@@ -13,6 +14,10 @@ import socket # for socket
 import sys # for command line arguments
 import random # for calculation of if to send packet
 import time # for wait
+import pickle
+
+from lt import Encoder
+from soliton import robust_soliton
 
 class Sender():
     """
@@ -21,8 +26,12 @@ class Sender():
 
     self.noise refers to the probability that sender does not send a packet
     """
-    def __init__(self, noise = 0.0):
-        self.message = "hi there fren"
+    def __init__(self, blk_sz=20, soliton=robust_soliton, data=None, M=485, d=2, noise = 0.0):
+        self.encoder = Encoder()
+        if data is None:
+            data = ''.join([str(random.randint(0, 1)) for _ in range(1000 * blk_sz)])
+        self.encoder.create_blocks(data, blk_sz)
+        self.message_generator = self.encoder.encode(0, soliton, M=M, d=d)
         # local host IP address to send to, we are sending a message to ourself
         self.ip = "127.0.0.1"
         # port to send message to
@@ -35,7 +44,8 @@ class Sender():
         """
         returns a message to be send to the receiever
         """
-        return self.message
+        s = next(self.message_generator)
+        return pickle.dumps(s)
 
     def runUDP(self, sock):
         """
@@ -45,7 +55,7 @@ class Sender():
         # just send entire message without check for completeness
         while True:
             # send message to receiver at IP, PORT
-            if (self.noise < random.random()): sock.sendto(self.getMessage().encode(), (self.ip, self.port))
+            if (self.noise < random.random()): sock.sendto(self.getMessage(), (self.ip, self.port))
             time.sleep(1)
 
     def runTCP(self, sock):
@@ -56,10 +66,11 @@ class Sender():
         sock.connect((self.ip, self.port))
         # continue to send massage until...
         while True:
-            if (self.noise < random.random()): sock.sendall(self.getMessage().encode())
+            if (self.noise < random.random()): sock.sendall(self.getMessage())
             # data = sock.recv(1024)
             # print('Received', repr(data))
-            print('sending: ', self.getMessage())
+            # dont run line 73
+            # print 'sending message: ' + str(pickle.loads(self.getMessage()))
             time.sleep(2)
 
     def run(self, proto):
@@ -67,7 +78,7 @@ class Sender():
         runs sender, using the protocol described by the index proto
         """
         print 'targeting IP:', self.ip, 'target port:', self.port
-        print 'message:', self.getMessage()
+        # print 'message:', self.getMessage()
         # open socket as sock
         sock = socket.socket(socket.AF_INET, self.protos[proto])
         if   proto == 0: self.runUDP(sock)

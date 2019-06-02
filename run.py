@@ -28,7 +28,7 @@ if __name__ == '__main__':
     NOISE = 0.0
 
     # build sender and receiver
-    receiver, sender, = Receiver(), Sender(NOISE)
+    receiver, sender, = Receiver(), Sender(noise = NOISE)
 
     pr = Process(target=receiver.run, args=(parseArgs(), )) # spawn receiver process
     ps = Process(target=sender.run, args=(parseArgs(), )) # spawn sender process
