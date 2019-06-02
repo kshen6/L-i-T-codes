@@ -68,6 +68,7 @@ class Receiver():
         """
         self.d = Decoder()
         while True:
+            self.packetsReceived += 1
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
             data = pickle.loads(data)
             # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]

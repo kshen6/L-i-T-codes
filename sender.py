@@ -152,7 +152,7 @@ class Sender():
         with probability noise, packet gets lost
         """
         # just send entire message without check for completeness
-        for _ in range(7 * len(self.blocks)):
+        for _ in range(50 * len(self.blocks)):
             # send message to receiver at IP, PORT
             self.packetsSent += 1
             if (self.noise < random.random()):
