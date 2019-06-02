@@ -16,7 +16,7 @@ class Receiver():
     Sender class, meant to represent the sender end of communication
     Sender.run is built to be run by a subprocess
     """
-    def __init__(self, proto, file):
+    def __init__(self, proto, filename):
         #### NETWORK SETUP ####
         # local host IP address listen on
         self.ip = "127.0.0.1"
@@ -32,7 +32,7 @@ class Receiver():
         #### DECODING SETUP ####
         self.packetsReceived = 0
         self.packets = []
-        self.file = file # file to write receive information to
+        self.file = filename # file to write receive information to
 
     def runUDP(self, sock):
         """
