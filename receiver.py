@@ -8,7 +8,7 @@ where -proto can be -tcp or -udp.
 import socket # for socket
 import sys # for command line arguments
 import pickle
-from rq import decode
+from rq import Decoder
 
 class Receiver():
     """
@@ -27,9 +27,21 @@ class Receiver():
         """
         runs UDP protocol on socket sock
         """
+        self.d = Decoder()
+        numPackets = 0
+        message = ''
         while True:
-            data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            print'Received message:', decode(pickle.loads(data)), '   from ip:', addr[0], 'port:', addr[1]
+            numPackets += 1
+            data, addr = sock.recvfrom(10000) # buffer size is 1024 bytes
+            loaded_data = pickle.loads(data)
+            self.d.symbols[loaded_data[3][0]]=loaded_data[3][1]
+            message = 'Not enough data yet...'
+            if numPackets %100 == 0:
+                message = self.d.decode(pickle.loads(data))
+            if message != 'Not enough data yet...': break
+            # print'Received message:', self.d.decode(pickle.loads(data)), '   from ip:', addr[0], 'port:', addr[1]
+        print'Received message:', message, '   from ip:', addr[0], 'port:', addr[1]
+        print 'numPackets received: ', numPackets
 
     def runTCP(self, sock):
         sock.listen(1)

@@ -18,9 +18,9 @@ def encode(opts, data):
     if data_len % n: data += '\0' * (n - data_len % n)
     
     # Set default values for options
-    min_subsymbol_size = 4
-    symbol_size= 4
-    max_memory= 200
+    min_subsymbol_size = 100
+    symbol_size= 100
+    max_memory= 2000
 
     # If options provided
     if len(opts) > 0:
@@ -36,13 +36,9 @@ def encode(opts, data):
             symbols.update(block.encode_iter(repair_rate=0))
 
         data_encoded = data_len, oti_scheme, oti_common, symbols
-    
-    # Print original data & encoded data symbols
-    # print data
-    # print data_encoded[3]
 
     # Return data length, oti_scheme, oti_common, and symbols,
-    # with symbols being the encoded data
+    # where symbols is the encoded data
     return data_encoded
     
 
@@ -55,30 +51,28 @@ The decode function for RaptorQ codes.
 
 :param data: Tuple containing encoded data – (data_len, oti_scheme, oti_common, symbols)
 '''
-def decode(data):
-    data_len, oti_scheme, oti_common, symbols = data
-    # n_syms, n_syms_total, n_sym_bytes = 0, len(symbols), 0
+class Decoder():
+    def __init__(self):
+        self.symbols = dict()
+    
+    def decode(self, data):
+        data_len, oti_scheme, oti_common, packet = data
+        # self.symbols[packet[0]] = packet[1]
+        # n_syms, n_syms_total, n_sym_bytes = 0, len(symbols), 0
 
-    with RQDecoder(oti_common, oti_scheme) as dec:
-        for sym_id, sym in symbols.viewitems(): #dec.add_symbol(sym, sym_id)
-            sym_id, sym = int(sym_id), sym
-            try: dec.add_symbol(sym, sym_id)
-            except RQError as err: continue
-            # n_syms, n_sym_bytes = n_syms + 1, n_sym_bytes + len(sym)
-            try: data = dec.decode()[:data_len] #dec.decode()[:data['data_bytes']] # strips \0 padding to rq block size
-            except RQError as err: pass
+        with RQDecoder(oti_common, oti_scheme) as dec:
+            for sym_id, sym in self.symbols.viewitems(): #dec.add_symbol(sym, sym_id)
+                sym_id, sym = int(sym_id), sym
+                try: dec.add_symbol(sym, sym_id)
+                except RQError as err: continue
+                # n_syms, n_sym_bytes = n_syms + 1, n_sym_bytes + len(sym)
+                try: data = dec.decode()[:data_len] #dec.decode()[:data['data_bytes']] # strips \0 padding to rq block size
+                except RQError as err: pass
+                else:
+                    break
             else:
-				break
-        else:
-            return 'Not enough data yet...'
-            # raise EncDecFailure(( 'Failed to decode data from {}'
-			#     ' total symbols (processed: {}) - {}' ).format(n_syms_total, n_syms, err))
-	# print 'Closed RQDecoder' #(%.3fs)...'
-	# print 'Decoded', num_fmt(len(data)), 'B of data from', num_fmt(n_syms) ,'processed symbols (,', num_fmt(n_sym_bytes),'B without ids, symbols total:',num_fmt(n_syms_total), ')'
-	return data
-        # data_decoded = dec.decode()[:data_len]
+                return 'Not enough data yet...'
+       
+        return data
 
-    # print data_decoded
-
-    # return data_decoded
 

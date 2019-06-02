@@ -15,7 +15,7 @@ import random # for calculation of if to send packet
 import time # for wait
 import pickle
 import random
-from rq import encode, decode
+from rq import encode
 
 
 class Sender():
@@ -26,7 +26,8 @@ class Sender():
     self.noise refers to the probability that sender does not send a packet
     """
     def __init__(self, noise = 0.0):
-        self.message = "hi there fren"
+        self.file = open('Harry_Pottter_and_the_Sorcerer.txt', 'r')
+        self.message = self.file.read()
         self.encoded_data = encode([], self.message)
         self.data_len, self.oti_scheme, self.oti_common, self.symbols = self.encoded_data
         # local host IP address to send to, we are sending a message to ourself
@@ -45,19 +46,22 @@ class Sender():
 
         # data_len, oti_scheme, oti_common, symbols = data
         next_block_key, next_block_val = random.choice(list(self.symbols.items()))
-        self.curr_data[next_block_key] = next_block_val
-        return (self.data_len, self.oti_scheme, self.oti_common, self.curr_data)
+        # self.curr_data[next_block_key] = next_block_val
+        return (self.data_len, self.oti_scheme, self.oti_common, (next_block_key, next_block_val))
 
     def runUDP(self, sock):
         """
         runs UDP protocol on socket sock
         with probability noise, do not send packet
         """
+        numPackets = 0
         # just send entire message without check for completeness
         while True:
             # send message to receiver at IP, PORT
+            numPackets += 1
             if (self.noise < random.random()): sock.sendto(pickle.dumps(self.getMessage()), (self.ip, self.port))
-            time.sleep(1)
+            # time.sleep(1)
+        print 'numPackets sent: ', numPackets
 
     def runTCP(self, sock):
         """
