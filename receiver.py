@@ -9,6 +9,7 @@ import socket # for socket
 import sys # for command line arguments
 import pickle
 from rq import decode
+
 class Receiver():
     """
     Sender class, meant to represent the sender end of communication
