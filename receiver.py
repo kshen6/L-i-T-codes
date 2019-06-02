@@ -56,10 +56,10 @@ class Receiver():
             data, addr = conn.recvfrom(1024) # buffer size is 1024 bytes
             self.packetsReceived += 1
             print(data)
-            data = pickle.loads(data)
-            if not data: # sentinal received
+            data_cpy = pickle.loads(data)
+            if not data_cpy: # sentinal received
                 break
-            self.packets.append(data)
+            self.packets.append(data_cpy)
         self.data = [packet for packet in self.packets]
 
     def runLT(self, sock):
@@ -74,8 +74,9 @@ class Receiver():
             # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
             self.d.update_belief(data)
             if all(e is not None for e in self.d.belief):
-                print 'Completed decoding'
+                print 'Receiver: Completed decoding'
                 break
+        sock.close()
         self.data = [data for data in self.d.belief]
 
     def writeData(self):
@@ -83,10 +84,15 @@ class Receiver():
         Write data received to a file defined by self.file
         Assumes that we have already decoded self.packets to self.data
         """
-        f = open('./resources_received/' + self.file, "w")
-        for data in self.data:
-            f.write(data)
+        f = open('./resources_received/' + self.file, "w+")
+        for i in range(len(self.data) - 1):
+            f.write(self.data[i])
+        # get rid of padding on last block
+        final_data = self.data[len(self.data) - 1]
+        while final_data[-1] == '\0': final_data = final_data[:-1]
+        f.write(final_data)
         print 'Receiver: received {}'.format(self.file)
+        f.close()
 
     def outputStats(self):
         """
@@ -119,12 +125,9 @@ def parseArgs():
     if (len(sys.argv) < 2):
         print('specify the protocol you want to implement')
         exit(1)
-    if (sys.argv[1] == '-udp'):
-        return 0
-    elif (sys.argv[1] == '-tcp'):
-        return 1
-    elif (sys.argv[1] == '-lt'):
-        return 2
+    if   (sys.argv[1] == '-udp'): return 0
+    elif (sys.argv[1] == '-tcp'): return 1
+    elif (sys.argv[1] == '-lt' ): return 2
     else:
         print('specify the protocol you want to implement as:\n \
              python sender.py [-udp / -tcp ]')

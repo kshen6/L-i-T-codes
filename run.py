@@ -27,10 +27,10 @@ from sender import Sender
 
 if __name__ == '__main__':
     # Defined constants to test
-    NOISE = 0.2
-    file = 'Harry_Pottter_and_the_Sorcerer.txt'
-    # file = 'stanford.png'
+    NOISE = 0.00
     # file = 'Green_Eggs_and_Ham.txt'
+    file = 'Harry_Pottter_and_the_Sorcerer.txt'
+    # file = 'Slaughterhouse_Five.txt'
 
     # spawn receiver
     recv_pid = os.fork()
