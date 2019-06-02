@@ -14,25 +14,42 @@ where -proto can be -tcp or -udp in two seperate terminal windows in order to
 run each user seperately
 """
 # built in packages
-from multiprocessing import Process # for multiprocessing
+# from multiprocessing import Process # for multiprocessing
+import os
 import time     # for sleep and timing
 import sys      # for argument parsing
 import random   # RNG
+import filecmp # to compare outputs from sender and receiver
 # our own packages
 from lt import Packet, Encoder, Decoder
 from receiver import Receiver, parseArgs
 from sender import Sender
 
 if __name__ == '__main__':
-    # Define thta 30% of packages get lost
-    NOISE = 0.0
+    # Defined constants to test
+    NOISE = 0.01
+    file = 'Harry_Pottter_and_the_Sorcerer.txt'
 
-    # build sender and receiver
-    receiver, sender, = Receiver(), Sender(noise = NOISE)
+    # spawn receiver
+    recv_pid = os.fork()
+    if recv_pid == 0:
+        receiver = Receiver(parseArgs(), file)
+        receiver.run()
+        exit(0)
+    # spawn sender
+    send_pid = os.fork()
+    if send_pid == 0:
+        sender = Sender(parseArgs(), file, noise=NOISE)
+        sender.run()
+        exit(0)
 
-    pr = Process(target=receiver.run, args=(parseArgs(), )) # spawn receiver process
-    ps = Process(target=sender.run, args=(parseArgs(), )) # spawn sender process
+    # wait for sender and receiver to be finished
+    os.waitpid(send_pid, 0)
+    os.waitpid(recv_pid, 0)
 
-    # begin processes
-    pr.start()
-    ps.start()
+    # output results
+    print('Both Sender and Receiver have exited')
+    if filecmp.cmp('./resources_to_send/' + file, './resources_received/' + file):
+        print('Sent and received files match!')
+    else:
+        print('Sent and received files differ')
