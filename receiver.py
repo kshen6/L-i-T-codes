@@ -7,7 +7,8 @@ where -proto can be -tcp or -udp.
 """
 import socket # for socket
 import sys # for command line arguments
-
+import pickle
+from rq import decode
 class Receiver():
     """
     Sender class, meant to represent the sender end of communication
@@ -27,7 +28,7 @@ class Receiver():
         """
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            print'Received message:', data.decode(), '   from ip:', addr[0], 'port:', addr[1]
+            print'Received message:', decode(pickle.loads(data)), '   from ip:', addr[0], 'port:', addr[1]
 
     def runTCP(self, sock):
         sock.listen(1)

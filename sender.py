@@ -13,6 +13,10 @@ import socket # for socket
 import sys # for command line arguments
 import random # for calculation of if to send packet
 import time # for wait
+import pickle
+import random
+from rq import encode, decode
+
 
 class Sender():
     """
@@ -23,6 +27,8 @@ class Sender():
     """
     def __init__(self, noise = 0.0):
         self.message = "hi there fren"
+        self.encoded_data = encode([], self.message)
+        self.data_len, self.oti_scheme, self.oti_common, self.symbols = self.encoded_data
         # local host IP address to send to, we are sending a message to ourself
         self.ip = "127.0.0.1"
         # port to send message to
@@ -30,12 +36,17 @@ class Sender():
         # constants that define what protocol to use
         self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM]
         self.noise = noise
+        self.curr_data = dict()
 
     def getMessage(self):
         """
-        returns a message to be send to the receiever
+        returns a message to be sent to the receiver
         """
-        return self.message
+
+        # data_len, oti_scheme, oti_common, symbols = data
+        next_block_key, next_block_val = random.choice(list(self.symbols.items()))
+        self.curr_data[next_block_key] = next_block_val
+        return (self.data_len, self.oti_scheme, self.oti_common, self.curr_data)
 
     def runUDP(self, sock):
         """
@@ -45,7 +56,7 @@ class Sender():
         # just send entire message without check for completeness
         while True:
             # send message to receiver at IP, PORT
-            if (self.noise < random.random()): sock.sendto(self.getMessage().encode(), (self.ip, self.port))
+            if (self.noise < random.random()): sock.sendto(pickle.dumps(self.getMessage()), (self.ip, self.port))
             time.sleep(1)
 
     def runTCP(self, sock):
@@ -54,9 +65,9 @@ class Sender():
         """
         # connect to receiever, tls handshake
         sock.connect((self.ip, self.port))
-        # continue to send massage until...
+        # continue to send message until...
         while True:
-            if (self.noise < random.random()): sock.sendall(self.getMessage().encode())
+            if (self.noise < random.random()): sock.sendall(pickle.dumps(self.getMessage()))
             # data = sock.recv(1024)
             # print('Received', repr(data))
             print('sending: ', self.getMessage())
