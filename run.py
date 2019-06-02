@@ -28,7 +28,9 @@ from sender import Sender
 if __name__ == '__main__':
     # Defined constants to test
     NOISE = 0.00
+    # file = 'Green_Eggs_and_Ham.txt'
     file = 'Harry_Pottter_and_the_Sorcerer.txt'
+    # file = 'Slaughterhouse_Five.txt'
 
     # spawn receiver
     recv_pid = os.fork()
@@ -39,7 +41,7 @@ if __name__ == '__main__':
     # spawn sender
     send_pid = os.fork()
     if send_pid == 0:
-        sender = Sender(parseArgs(), file, noise=NOISE)
+        sender = Sender(parseArgs(), file, noise=NOISE, packet_size=50)
         sender.run()
         exit(0)
 

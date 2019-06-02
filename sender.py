@@ -81,10 +81,11 @@ class Sender():
                 raise 'Stop.'
             # The last read bytes needs a right padding to be XORed in the future
             if len(data) != packet_size:
-                data = data + ' ' * (packet_size - len(data)) # pad if necessary
+                data = data + '\0' * (packet_size - len(data)) # pad if necessary
                 assert i == num_block - 1, 'Packet ' + str(i) + ' has a not handled size of ' + str(len(self.blocks[i])) + '  bytes.'
             # Packets are condensed in the right array type
             self.blocks.append(data)
+        f.close()
         # print "data ============== \n"
         print 'Sender: num blocks: ' + str(len(self.blocks))
         # self.message_generator = iter(self.blocks)
@@ -146,18 +147,23 @@ class Sender():
         for _ in range(10): # send constant number of sentinals
             sock.sendto(pickle.dumps(None), (self.ip, self.port))
 
+    def listenForRecvToFinishThread(self):
+        pass
+
     def runLT(self, sock):
         """
         runs LT protocol on socket sock
         with probability noise, packet gets lost
         """
         # just send entire message without check for completeness
-        for _ in range(7 * len(self.blocks)):
+        self.recvFinshed = False
+        for _ in range(2 * len(self.blocks)):
             # send message to receiver at IP, PORT
             self.packetsSent += 1
             if (self.noise < random.random()):
                 # send message to receiver at IP, PORT
                 sock.sendto(pickle.dumps(next(self.message_generator)), (self.ip, self.port))
+        sock.close()
 
     def outputStats(self):
         """
@@ -188,12 +194,9 @@ def parseArgs():
     if (len(sys.argv) < 2):
         print('specify the protocol you want to implement')
         exit(1)
-    if (sys.argv[1] == '-udp'):
-        return 0
-    elif (sys.argv[1] == '-tcp'):
-        return 1
-    elif (sys.argv[1] == '-lt'):
-        return 2
+    if   (sys.argv[1] == '-udp'): return 0
+    elif (sys.argv[1] == '-tcp'): return 1
+    elif (sys.argv[1] == '-lt' ): return 2
     else:
         print('specify the protocol you want to implement as:\n \
              python sender.py [-udp / -tcp ]')
