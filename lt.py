@@ -9,7 +9,7 @@ def xor(s1, s2):
     perform component-wise xor
     '''
     assert len(s1) == len(s2), 'cannot xor if unequal size'
-    return ''.join(str(int(a)^int(b)) for a,b in zip(s1,s2))
+    return ''.join(str(chr(ord(a)^ord(b))) for a,b in zip(s1,s2))
 
 class Packet():
     '''
@@ -64,6 +64,7 @@ class Encoder():
 
         counter = 0
         num_blocks = len(self.blocks)
+        M = int(num_blocks / 2) # defines the second peak in soliton distribution
         while counter < num_to_transmit:
             # choose a degree based on the given soliton distribution
             degree = np.random.choice(range(1, num_blocks + 1), p=soliton(num_blocks, M=M, d=d))

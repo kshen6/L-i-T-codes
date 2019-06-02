@@ -23,12 +23,15 @@ class Receiver():
         # port we are listening on
         self.port = 5005
         # constants that define what protocol to use
-        self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM]
+        self.protos = [socket.SOCK_DGRAM, # UDP
+                       socket.SOCK_STREAM, # TCP
+                       socket.SOCK_DGRAM # LT
+                       ]
         self.proto = proto
 
+        #### DECODING SETUP ####
         self.packetsReceived = 0
         self.packets = []
-        self.d = Decoder()
         self.file = file # file to write receive information to
 
     def runUDP(self, sock):
@@ -63,13 +66,16 @@ class Receiver():
         """
         runs UDP protocol on socket sock
         """
+        self.d = Decoder()
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
             data = pickle.loads(data)
-            print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
+            # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
             self.d.update_belief(data)
             if all(e is not None for e in self.d.belief):
                 print 'Completed decoding'
+                break
+        self.data = [data for data in self.d.belief]
 
     def writeData(self):
         """
@@ -116,9 +122,11 @@ def parseArgs():
         return 0
     elif (sys.argv[1] == '-tcp'):
         return 1
+    elif (sys.argv[1] == '-lt'):
+        return 2
     else:
-        print('supported protocols include: -udp, -tcp')
-        exit(1)
+        print('specify the protocol you want to implement as:\n \
+             python sender.py [-udp / -tcp ]')
 
 if __name__ == '__main__':
     r = Receiver(parseArgs(), 'Green_Eggs_and_Ham.txt')

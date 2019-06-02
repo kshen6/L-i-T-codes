@@ -27,7 +27,7 @@ from sender import Sender
 
 if __name__ == '__main__':
     # Defined constants to test
-    NOISE = 0.01
+    NOISE = 0.00
     file = 'Harry_Pottter_and_the_Sorcerer.txt'
 
     # spawn receiver
