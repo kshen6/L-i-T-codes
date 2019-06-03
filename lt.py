@@ -1,7 +1,6 @@
 from __future__ import division
 import numpy as np
 import random
-import matplotlib.pyplot as plt
 from soliton import ideal_soliton, robust_soliton
 
 def xor(s1, s2):
@@ -93,8 +92,8 @@ class Decoder():
             self.num_blocks = packet.num_blocks
             self.belief = [None] * self.num_blocks
         self.received.append(packet)
-        if self.num_packets % 100 == 0: # to speed up receiving
-            self.decode()
+        # if self.num_packets % 100 == 0: # to speed up receiving
+        self.decode()
     
     def decode(self):
         symbols_n = len(self.received)

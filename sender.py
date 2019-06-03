@@ -58,17 +58,6 @@ class Sender():
         self.packetsSent = 0
 
     def build_blocks(self, filename, packet_size):
-        """
-        Read the given file by blocks of `core.PACKET_SIZE` and use np.frombuffer() improvement.
-
-        By default, we store each octet into a np.uint8 array space, but it is also possible
-        to store up to 8 octets together in a np.uint64 array space.
-
-        This process is not saving memory but it helps reduce dimensionnality, especially for the
-        XOR operation in the encoding. Example:
-        * np.frombuffer(b'x01x02', dtype=np.uint8) => array([1, 2], dtype=uint8)
-        * np.frombuffer(b'x01x02', dtype=np.uint16) => array([513], dtype=uint16)
-        """
         filesize = os.path.getsize('./resources_to_send/' + filename)
         f = open('./resources_to_send/' + filename, "r")
         num_block = int(math.ceil(filesize / packet_size))
@@ -159,8 +148,8 @@ class Sender():
         self.recvFinshed = False
         for _ in range(2 * len(self.blocks)):
             # send message to receiver at IP, PORT
-            self.packetsSent += 1
             if (self.noise < random.random()):
+                self.packetsSent += 1
                 # send message to receiver at IP, PORT
                 sock.sendto(pickle.dumps(next(self.message_generator)), (self.ip, self.port))
         sock.close()
