@@ -18,10 +18,10 @@ class Receiver():
     """
     def __init__(self, proto, filename):
         #### NETWORK SETUP ####
-        # local host IP address listen on
-        self.ip = "127.0.0.1"
-        # port we are listening on
-        self.port = 5005
+        # local host ip of receiver and sender
+        self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
+        # local port of receiver and sender
+        self.recv_port, self.send_port = 5005, 5006
         # constants that define what protocol to use
         self.protos = [socket.SOCK_DGRAM, # UDP
                        socket.SOCK_STREAM, # TCP
@@ -76,6 +76,7 @@ class Receiver():
             if all(e is not None for e in self.d.belief):
                 print 'Receiver: Completed decoding'
                 break
+        sock.sendto(pickle.dumps(None), (self.send_ip, self.send_port))
         sock.close()
         self.data = [data for data in self.d.belief]
 
@@ -108,8 +109,8 @@ class Receiver():
         sock =  socket.socket(socket.AF_INET,
                            self.protos[self.proto])
         # bind socket to our IP and PORT
-        sock.bind((self.ip, self.port))
-        print "Receiver: Listening at ip {}, port {}".format(self.ip, self.port)
+        sock.bind((self.recv_ip, self.recv_port))
+        print "Receiver: Listening at ip {}, port {}".format(self.recv_ip, self.recv_port)
         if   self.proto == 0: self.runUDP(sock)
         elif self.proto == 1: self.runTCP(sock)
         elif self.proto == 2: self.runLT(sock)

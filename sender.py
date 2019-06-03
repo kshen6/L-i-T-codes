@@ -19,6 +19,7 @@ import numpy as np
 import math
 import os # for file read and write
 import threading
+import mutex
 
 from lt import Encoder
 from soliton import robust_soliton
@@ -42,9 +43,9 @@ class Sender():
     def __init__(self, protocol, filename, packet_size=20, data=None, noise=0.0):
         #### NETWORK SETUP ####
         # local host IP address to send to, we are sending a message to ourself
-        self.ip = "127.0.0.1"
+        self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
         # port to send message to
-        self.port = 5005
+        self.recv_port, self.send_port = 5005, 5006
         # constants that define what protocol to use
         self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM, socket.SOCK_DGRAM]
         self.proto = protocol
@@ -104,9 +105,8 @@ class Sender():
             self.packetsSent += 1
             if (self.noise < random.random()):
                 # send message to receiver at IP, PORT
-                sock.sendto(pickle.dumps(block), (self.ip, self.port))
-        for _ in range(10): # send constant number of sentinals
-            sock.sendto(pickle.dumps(None), (self.ip, self.port))
+                sock.sendto(pickle.dumps(block), (self.recv_ip, self.recv_port))
+        sock.sendto(pickle.dumps(None), (self.recv_ip, self.recv_port))
 
     def receiveTCP(self):
         pass
@@ -123,7 +123,7 @@ class Sender():
         USING THREADING IN ORDER TO KEEP TRACK OF WHAT HAS BEEN SENT ALREADY
         """
         # connect to receiever, tls handshake
-        sock.connect((self.ip, self.port))
+        sock.connect((self.recv_ip, self.recv_port))
         # continue to send massage until...
 
         for block in self.blocks:
@@ -134,10 +134,21 @@ class Sender():
                 # print(pickle.loads(pickle.dumps(block)))
                 sock.sendall(pickle.dumps(block))
         for _ in range(10): # send constant number of sentinals
-            sock.sendto(pickle.dumps(None), (self.ip, self.port))
+            sock.sendto(pickle.dumps(None), (self.recv_ip, self.recv_port))
 
     def listenForRecvToFinishThread(self):
-        pass
+        """
+        thread function to wait for sentinal from receiver to say that they are done
+        """
+        sentinal_sock = socket.socket(socket.AF_INET, self.protos[self.proto])
+        # bind socket to our IP and PORT
+        sentinal_sock.bind((self.send_ip, self.send_port))
+        while True:
+            data, addr = sentinal_sock.recvfrom(64) # buffer size is 1024 bytes
+            if not pickle.loads(data): # sentinal is None
+                break
+        self.recvFinshed = True
+        sentinal_sock.close()
 
     def runLT(self, sock):
         """
@@ -146,13 +157,17 @@ class Sender():
         """
         # just send entire message without check for completeness
         self.recvFinshed = False
-        for _ in range(2 * len(self.blocks)):
+        sentinal_waiter = threading.Thread(target=self.listenForRecvToFinishThread)
+        sentinal_waiter.setDaemon(True)
+        sentinal_waiter.start()
+        while (not self.recvFinshed):
             # send message to receiver at IP, PORT
             if (self.noise < random.random()):
                 self.packetsSent += 1
                 # send message to receiver at IP, PORT
-                sock.sendto(pickle.dumps(next(self.message_generator)), (self.ip, self.port))
+                sock.sendto(pickle.dumps(next(self.message_generator)), (self.recv_ip, self.recv_port))
         sock.close()
+        sentinal_waiter.join()
 
     def outputStats(self):
         """
@@ -164,7 +179,7 @@ class Sender():
         """
         runs sender, using the protocol described by the index proto
         """
-        print 'Sender: Targeting IP:', self.ip, 'target port:', self.port
+        print 'Sender: Targeting IP:', self.recv_ip, 'target port:', self.recv_port
         print 'Sender: sending ', self.file
         # print 'message:', self.getMessage()
         # open socket as sock
