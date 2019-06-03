@@ -60,7 +60,7 @@ class Sender():
         f = open('./resources_to_send/' + filename, "r")
         num_block = int(math.ceil(filesize / packet_size))
         self.blocks = []
-        self.max_memory = packet_size*10
+        self.max_memory = packet_size*2
         # if not RaptorQ
         if self.proto != 3: 
         # Read data by blocks
