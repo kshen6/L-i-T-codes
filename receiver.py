@@ -16,7 +16,7 @@ class Receiver():
     Sender class, meant to represent the sender end of communication
     Sender.run is built to be run by a subprocess
     """
-    def __init__(self, proto, file):
+    def __init__(self, proto, filename):
         #### NETWORK SETUP ####
         # local host ip of receiver and sender
         self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
@@ -32,7 +32,7 @@ class Receiver():
         #### DECODING SETUP ####
         self.packetsReceived = 0
         self.packets = []
-        self.file = file # file to write receive information to
+        self.file = filename # file to write receive information to
 
     def runUDP(self, sock):
         """
@@ -68,8 +68,8 @@ class Receiver():
         """
         self.d = Decoder()
         while True:
-            data, addr = sock.recvfrom(2048) # buffer size is 2048 bytes
             self.packetsReceived += 1
+            data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
             data = pickle.loads(data)
             # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
             self.d.update_belief(data)

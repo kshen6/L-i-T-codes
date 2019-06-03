@@ -19,7 +19,7 @@ import os
 import time     # for sleep and timing
 import sys      # for argument parsing
 import random   # RNG
-import filecmp # to compare outputs from sender and receiver
+import FILENAMEcmp # to compare outputs from sender and receiver
 # our own packages
 from lt import Packet, Encoder, Decoder
 from receiver import Receiver, parseArgs
@@ -28,20 +28,21 @@ from sender import Sender
 if __name__ == '__main__':
     # Defined constants to test
     NOISE = 0.00
-    # file = 'Green_Eggs_and_Ham.txt'
-    # file = 'Harry_Pottter_and_the_Sorcerer.txt'
-    file = 'Slaughterhouse_Five.txt'
+    # FILENAME = 'Green_Eggs_and_Ham.txt'
+    FILENAME = 'Harry_Pottter_and_the_Sorcerer.txt'
+    # FILENAME = 'Slaughterhouse_Five.txt'
+    PACK_SIZE = 50
 
     # spawn receiver
     recv_pid = os.fork()
     if recv_pid == 0:
-        receiver = Receiver(parseArgs(), file)
+        receiver = Receiver(parseArgs(), FILENAME)
         receiver.run()
         exit(0)
     # spawn sender
     send_pid = os.fork()
     if send_pid == 0:
-        sender = Sender(parseArgs(), file, noise=NOISE, packet_size=200)
+        sender = Sender(parseArgs(), FILENAME, noise=NOISE, packet_size = PACK_SIZE)
         sender.run()
         exit(0)
 
@@ -51,7 +52,7 @@ if __name__ == '__main__':
 
     # output results
     print('Both Sender and Receiver have exited')
-    if filecmp.cmp('./resources_to_send/' + file, './resources_received/' + file):
+    if FILENAMEcmp.cmp('./resources_to_send/' + FILENAME, './resources_received/' + FILENAME):
         print('Sent and received files match!')
     else:
         print('Sent and received files differ')

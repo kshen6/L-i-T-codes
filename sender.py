@@ -40,7 +40,7 @@ class Sender():
 
     self.noise refers to the probability that sender does not send a packet
     """
-    def __init__(self, protocol, file, packet_size=20, data=None, noise=0.0):
+    def __init__(self, protocol, filename, packet_size=20, data=None, noise=0.0):
         #### NETWORK SETUP ####
         # local host IP address to send to, we are sending a message to ourself
         self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
@@ -51,31 +51,20 @@ class Sender():
         self.proto = protocol
 
         #### SETUP ENCODER ####
-        self.build_blocks(file, packet_size)
-        self.encode_blocks(file, packet_size)
+        self.build_blocks(filename, packet_size)
+        self.encode_blocks(filename, packet_size)
 
-        self.file = file
+        self.file = filename
         self.noise = noise
         self.packetsSent = 0
 
-    def build_blocks(self, file, packet_size):
-        """
-        Read the given file by blocks of `core.PACKET_SIZE` and use np.frombuffer() improvement.
-
-        By default, we store each octet into a np.uint8 array space, but it is also possible
-        to store up to 8 octets together in a np.uint64 array space.
-
-        This process is not saving memory but it helps reduce dimensionnality, especially for the
-        XOR operation in the encoding. Example:
-        * np.frombuffer(b'x01x02', dtype=np.uint8) => array([1, 2], dtype=uint8)
-        * np.frombuffer(b'x01x02', dtype=np.uint16) => array([513], dtype=uint16)
-        """
-        filesize = os.path.getsize('./resources_to_send/' + file)
-        f = open('./resources_to_send/' + file, "r")
+    def build_blocks(self, filename, packet_size):
+        filesize = os.path.getsize('./resources_to_send/' + filename)
+        f = open('./resources_to_send/' + filename, "r")
         num_block = int(math.ceil(filesize / packet_size))
         self.blocks = []
 
-        # Read data by blocks of size core.PACKET_SIZE
+        # Read data by blocks
         for i in range(num_block):
             data = f.read(packet_size)
             if not data:
@@ -173,8 +162,8 @@ class Sender():
         sentinal_waiter.start()
         while (not self.recvFinshed):
             # send message to receiver at IP, PORT
-            self.packetsSent += 1
             if (self.noise < random.random()):
+                self.packetsSent += 1
                 # send message to receiver at IP, PORT
                 sock.sendto(pickle.dumps(next(self.message_generator)), (self.recv_ip, self.recv_port))
         sock.close()
