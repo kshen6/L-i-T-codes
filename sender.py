@@ -79,10 +79,10 @@ class Sender():
             self.blocks = encode([packet_size, packet_size, self.max_memory], data)
         f.close()
         # print "data ============== \n"
-        if self.proto != 3:
-            print 'Sender: num blocks: ' + str(len(self.blocks))
-        else:
-            print 'Sender: num blocks: ' + str(len(self.blocks[3]))
+        # if self.proto != 3:
+        #     print 'Sender: num blocks: ' + str(len(self.blocks))
+        # else:
+        #     print 'Sender: num blocks: ' + str(len(self.blocks[3]))
         # self.message_generator = iter(self.blocks)
 
     def encode_blocks(self, file, packet_size, M=485, d=2):
@@ -203,14 +203,14 @@ class Sender():
         """
         Outputs statistics
         """
-        print 'Sender: sent {} total packet'.format(self.packetsSent)
+        # print 'Sender: sent {} total packet'.format(self.packetsSent)
 
     def run(self):
         """
         runs sender, using the protocol described by the index proto
         """
-        print 'Sender: Targeting IP:', self.recv_ip, 'target port:', self.recv_port
-        print 'Sender: sending ', self.file
+        # print 'Sender: Targeting IP:', self.recv_ip, 'target port:', self.recv_port
+        # print 'Sender: sending ', self.file
         # print 'message:', self.getMessage()
         # open socket as sock
         sock = socket.socket(socket.AF_INET, self.protos[self.proto])
@@ -220,7 +220,6 @@ class Sender():
         elif self.proto == 3: self.runRQ(sock)
 
         self.outputStats()
-
 
 def parseArgs():
     """

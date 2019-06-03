@@ -52,11 +52,11 @@ class Receiver():
     def runTCP(self, sock):
         sock.listen(1)
         conn, addr = sock.accept()
-        print 'Receiver: Connected to: {}'.format(addr)
+        # print 'Receiver: Connected to: {}'.format(addr)
         while True:
             data, addr = conn.recvfrom(1024) # buffer size is 1024 bytes
             self.packetsReceived += 1
-            print(data)
+            # print(data)
             data_cpy = pickle.loads(data)
             if not data_cpy: # sentinal received
                 break
@@ -75,7 +75,7 @@ class Receiver():
             # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
             self.d.update_belief(data)
             if all(e is not None for e in self.d.belief):
-                print 'Receiver: Completed decoding'
+                # print 'Receiver: Completed decoding'
                 break
         sock.sendto(pickle.dumps(None), (self.send_ip, self.send_port))
         sock.close()
@@ -97,7 +97,7 @@ class Receiver():
             if message != 'Not enough data yet...': break
             # print'Received message:', self.d.decode(pickle.loads(data)), '   from ip:', addr[0], 'port:', addr[1]
         self.data = message
-        print'Received message:', message, '   from ip:', addr[0], 'port:', addr[1]
+        # print'Received message:', message, '   from ip:', addr[0], 'port:', addr[1]
         sock.sendto(pickle.dumps(None), (self.send_ip, self.send_port))
         sock.close()
         # print 'numPackets received: ', self.packetsReceived
@@ -116,14 +116,14 @@ class Receiver():
         final_data = self.data[len(self.data) - 1]
         while final_data[-1] == '\0': final_data = final_data[:-1]
         f.write(final_data)
-        print 'Receiver: received {}'.format(self.file)
+        # print 'Receiver: received {}'.format(self.file)
         f.close()
 
     def outputStats(self):
         """
         Outputs statistics
         """
-        print 'Receiver: received {} total packet'.format(self.packetsReceived)
+        # print 'Receiver: received {} total packet'.format(self.packetsReceived)
 
     def run(self):
         """
@@ -134,7 +134,7 @@ class Receiver():
                            self.protos[self.proto])
         # bind socket to our IP and PORT
         sock.bind((self.recv_ip, self.recv_port))
-        print "Receiver: Listening at ip {}, port {}".format(self.recv_ip, self.recv_port)
+        # print "Receiver: Listening at ip {}, port {}".format(self.recv_ip, self.recv_port)
         if   self.proto == 0: self.runUDP(sock)
         elif self.proto == 1: self.runTCP(sock)
         elif self.proto == 2: self.runLT(sock)
