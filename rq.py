@@ -51,7 +51,7 @@ The decode function for RaptorQ codes.
 
 :param data: Tuple containing encoded data – (data_len, oti_scheme, oti_common, symbols)
 '''
-class Decoder():
+class RaptorDecoder():
     def __init__(self):
         self.symbols = dict()
     
