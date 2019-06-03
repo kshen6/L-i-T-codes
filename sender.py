@@ -17,7 +17,7 @@ import numpy as np
 import math
 import os # for file read and write
 import threading
-
+import mutex
 from lt import Encoder
 from rq import encode
 from soliton import robust_soliton
@@ -37,62 +37,52 @@ class Sender():
     Sender.run is built to be run by a subprocess
     self.noise refers to the probability that sender does not send a packet
     """
-    def __init__(self, protocol, file, packet_size=20, data=None, noise=0.0):
+    def __init__(self, protocol, filename, packet_size=20, data=None, noise=0.0):
         #### NETWORK SETUP ####
         # local host IP address to send to, we are sending a message to ourself
-        self.ip = "127.0.0.1"
+        self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
         # port to send message to
-        self.port = 5005
+        self.recv_port, self.send_port = 5005, 5006
         # constants that define what protocol to use
-        self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM, socket.SOCK_DGRAM]
+        self.protos = [socket.SOCK_DGRAM, socket.SOCK_STREAM, socket.SOCK_DGRAM, socket.SOCK_DGRAM]
         self.proto = protocol
 
         #### SETUP ENCODER ####
-        self.build_blocks(file, packet_size)
-        self.encode_blocks(file, packet_size)
+        self.build_blocks(filename, packet_size)
+        self.encode_blocks(filename, packet_size)
 
-        self.file = file
+        self.file = filename
         self.noise = noise
         self.packetsSent = 0
-
-        # for RaptorQ
-        self.max_memory = 2000
-        # self.encoded_data = encode([], self.message)
-        # self.data_len, self.oti_scheme, self.oti_common, self.symbols = self.encoded_data
-
-    def build_blocks(self, file, packet_size):
-        """
-        Read the given file by blocks of `core.PACKET_SIZE` and use np.frombuffer() improvement.
-        By default, we store each octet into a np.uint8 array space, but it is also possible
-        to store up to 8 octets together in a np.uint64 array space.
-        This process is not saving memory but it helps reduce dimensionnality, especially for the
-        XOR operation in the encoding. Example:
-        * np.frombuffer(b'x01x02', dtype=np.uint8) => array([1, 2], dtype=uint8)
-        * np.frombuffer(b'x01x02', dtype=np.uint16) => array([513], dtype=uint16)
-        """
-        filesize = os.path.getsize('./resources_to_send/' + file)
-        f = open('./resources_to_send/' + file, "r")
+        
+    def build_blocks(self, filename, packet_size):
+        filesize = os.path.getsize('./resources_to_send/' + filename)
+        f = open('./resources_to_send/' + filename, "r")
         num_block = int(math.ceil(filesize / packet_size))
         self.blocks = []
-        
+        self.max_memory = packet_size*10
         # if not RaptorQ
         if self.proto != 3: 
-            # Read data by blocks of size core.PACKET_SIZE
+        # Read data by blocks
             for i in range(num_block):
                 data = f.read(packet_size)
                 if not data:
                     raise 'Stop.'
                 # The last read bytes needs a right padding to be XORed in the future
                 if len(data) != packet_size:
-                    data = data + ' ' * (packet_size - len(data)) # pad if necessary
+                    data = data + '\0' * (packet_size - len(data)) # pad if necessary
                     assert i == num_block - 1, 'Packet ' + str(i) + ' has a not handled size of ' + str(len(self.blocks[i])) + '  bytes.'
                 # Packets are condensed in the right array type
                 self.blocks.append(data)
         else:
-            data = open(self.file, 'r').read()
+            data = f.read()
             self.blocks = encode([packet_size, packet_size, self.max_memory], data)
+        f.close()
         # print "data ============== \n"
-        print 'Sender: num blocks: ' + str(len(self.blocks))
+        if self.proto != 3:
+            print 'Sender: num blocks: ' + str(len(self.blocks))
+        else:
+            print 'Sender: num blocks: ' + str(len(self.blocks[3]))
         # self.message_generator = iter(self.blocks)
 
     def encode_blocks(self, file, packet_size, M=485, d=2):
@@ -124,9 +114,8 @@ class Sender():
             self.packetsSent += 1
             if (self.noise < random.random()):
                 # send message to receiver at IP, PORT
-                sock.sendto(pickle.dumps(block), (self.ip, self.port))
-        for _ in range(10): # send constant number of sentinals
-            sock.sendto(pickle.dumps(None), (self.ip, self.port))
+                sock.sendto(pickle.dumps(block), (self.recv_ip, self.recv_port))
+        sock.sendto(pickle.dumps(None), (self.recv_ip, self.recv_port))
 
     def receiveTCP(self):
         pass
@@ -142,7 +131,7 @@ class Sender():
         USING THREADING IN ORDER TO KEEP TRACK OF WHAT HAS BEEN SENT ALREADY
         """
         # connect to receiever, tls handshake
-        sock.connect((self.ip, self.port))
+        sock.connect((self.recv_ip, self.recv_port))
         # continue to send massage until...
 
         for block in self.blocks:
@@ -153,7 +142,21 @@ class Sender():
                 # print(pickle.loads(pickle.dumps(block)))
                 sock.sendall(pickle.dumps(block))
         for _ in range(10): # send constant number of sentinals
-            sock.sendto(pickle.dumps(None), (self.ip, self.port))
+            sock.sendto(pickle.dumps(None), (self.recv_ip, self.recv_port))
+
+    def listenForRecvToFinishThread(self):
+        """
+        thread function to wait for sentinal from receiver to say that they are done
+        """
+        sentinal_sock = socket.socket(socket.AF_INET, self.protos[self.proto])
+        # bind socket to our IP and PORT
+        sentinal_sock.bind((self.send_ip, self.send_port))
+        while True:
+            data, addr = sentinal_sock.recvfrom(64) # buffer size is 1024 bytes
+            if not pickle.loads(data): # sentinal is None
+                break
+        self.recvFinshed = True
+        sentinal_sock.close()
 
     def runLT(self, sock):
         """
@@ -161,20 +164,29 @@ class Sender():
         with probability noise, packet gets lost
         """
         # just send entire message without check for completeness
-        for _ in range(50 * len(self.blocks)):
+        self.recvFinshed = False
+        sentinal_waiter = threading.Thread(target=self.listenForRecvToFinishThread)
+        sentinal_waiter.setDaemon(True)
+        sentinal_waiter.start()
+        while (not self.recvFinshed):
             # send message to receiver at IP, PORT
-            self.packetsSent += 1
             if (self.noise < random.random()):
+                self.packetsSent += 1
                 # send message to receiver at IP, PORT
-                sock.sendto(pickle.dumps(next(self.message_generator)), (self.ip, self.port))
-    
+                sock.sendto(pickle.dumps(next(self.message_generator)), (self.recv_ip, self.recv_port))
+        sock.close()
+        sentinal_waiter.join()
     def runRQ(self, sock):
         """
         runs RaptorQ protocol on socket sock
         with probability noise, packet gets lost
         """
 
-        for _ in range(50 * len(self.blocks)):
+        self.recvFinshed = False
+        sentinal_waiter = threading.Thread(target=self.listenForRecvToFinishThread)
+        sentinal_waiter.setDaemon(True)
+        sentinal_waiter.start()
+        while (not self.recvFinshed):
             # send message to receiver at IP, PORT
             self.packetsSent += 1
 
@@ -182,9 +194,10 @@ class Sender():
                 # choose random symbol to send
                 next_block_key, next_block_val = random.choice(list(self.packets.items()))
                 message = (self.data_len, self.oti_scheme, self.oti_common, (next_block_key, next_block_val))
-
                 # send message to receiver at IP, PORT
-                sock.sendto(pickle.dumps(message), (self.ip, self.port))
+                sock.sendto(pickle.dumps(message), (self.recv_ip, self.recv_port))
+        sock.close()
+        sentinal_waiter.join()
 
     def outputStats(self):
         """
@@ -196,7 +209,7 @@ class Sender():
         """
         runs sender, using the protocol described by the index proto
         """
-        print 'Sender: Targeting IP:', self.ip, 'target port:', self.port
+        print 'Sender: Targeting IP:', self.recv_ip, 'target port:', self.recv_port
         print 'Sender: sending ', self.file
         # print 'message:', self.getMessage()
         # open socket as sock
@@ -216,14 +229,10 @@ def parseArgs():
     if (len(sys.argv) < 2):
         print('specify the protocol you want to implement')
         exit(1)
-    if (sys.argv[1] == '-udp'):
-        return 0
-    elif (sys.argv[1] == '-tcp'):
-        return 1
-    elif (sys.argv[1] == '-lt'):
-        return 2
-    elif (sys.argv[1] == '-rq'):
-        return 3
+    if   (sys.argv[1] == '-udp'): return 0
+    elif (sys.argv[1] == '-tcp'): return 1
+    elif (sys.argv[1] == '-lt' ): return 2
+    elif (sys.argv[1] == '-rq' ): return 3
     else:
         print('specify the protocol you want to implement as:\n \
              python sender.py [-udp / -tcp / -rq]')

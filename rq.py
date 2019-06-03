@@ -26,11 +26,10 @@ def encode(opts, data):
     if len(opts) > 0:
         min_subsymbol_size, symbol_size, max_memory = opts
 
-    
     with RQEncoder(data, min_subsymbol_size, symbol_size, max_memory) as enc:
         symbols = dict()
         oti_scheme, oti_common = enc.oti_scheme, enc.oti_common
-        # print oti_common, oti_scheme
+        print oti_common, oti_scheme
 
         for block in enc:
             symbols.update(block.encode_iter(repair_rate=0))

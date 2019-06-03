@@ -24,21 +24,22 @@ from sender import Sender
 
 if __name__ == '__main__':
     # Defined constants to test
-    NOISE = 0.2
-    # file = 'Harry_Pottter_and_the_Sorcerer.txt'
-    # file = 'stanford.png'
-    file = 'Green_Eggs_and_Ham.txt'
+    NOISE = 0.20
+    FILENAME = 'Green_Eggs_and_Ham.txt'
+    # FILENAME = 'Harry_Pottter_and_the_Sorcerer.txt'
+    # FILENAME = 'Slaughterhouse_Five.txt'
+    PACK_SIZE = 100
 
     # spawn receiver
     recv_pid = os.fork()
     if recv_pid == 0:
-        receiver = Receiver(parseArgs(), file)
+        receiver = Receiver(parseArgs(), FILENAME)
         receiver.run()
         exit(0)
     # spawn sender
     send_pid = os.fork()
     if send_pid == 0:
-        sender = Sender(parseArgs(), file, noise=NOISE, packet_size = 50)
+        sender = Sender(parseArgs(), FILENAME, noise=NOISE, packet_size = PACK_SIZE)
         sender.run()
         exit(0)
 
@@ -48,45 +49,7 @@ if __name__ == '__main__':
 
     # output results
     print('Both Sender and Receiver have exited')
-    if filecmp.cmp('./resources_to_send/' + file, './resources_received/' + file):
+    if filecmp.cmp('./resources_to_send/' + FILENAME, './resources_received/' + FILENAME):
         print('Sent and received files match!')
     else:
         print('Sent and received files differ')
-# """
-# run.py
-
-# creates both a reciever and sender and then runs both in parallel
-
-# to run both a sender and a receiver that work in one terminal window do:
-#     python run.py [-proto]
-# where -proto can be -tcp or -udp.
-
-# you can also run:
-#     python sender.py [-proto]
-#     python receiver.py [-proto]
-# where -proto can be -tcp or -udp in two seperate terminal windows in order to
-# run each user seperately
-# """
-# # built in packages
-# from multiprocessing import Process # for multiprocessing
-# import time     # for sleep and timing
-# import sys      # for argument parsing
-# import random   # RNG
-# # our own packages
-# from lt import Packet, Encoder, Decoder
-# from receiver import Receiver, parseArgs
-# from sender import Sender
-
-# if __name__ == '__main__':
-#     # Define thta 30% of packages get lost
-#     NOISE = 0.0
-
-#     # build sender and receiver
-#     receiver, sender, = Receiver(), Sender(NOISE)
-
-#     pr = Process(target=receiver.run, args=(parseArgs(), )) # spawn receiver process
-#     ps = Process(target=sender.run, args=(parseArgs(), )) # spawn sender process
-
-#     # begin processes
-#     pr.start()
-#     ps.start()

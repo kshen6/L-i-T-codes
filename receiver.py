@@ -16,23 +16,24 @@ class Receiver():
     Sender class, meant to represent the sender end of communication
     Sender.run is built to be run by a subprocess
     """
-    def __init__(self, proto, file):
+    def __init__(self, proto, filename):
         #### NETWORK SETUP ####
-        # local host IP address listen on
-        self.ip = "127.0.0.1"
-        # port we are listening on
-        self.port = 5005
+        # local host ip of receiver and sender
+        self.recv_ip, self.send_ip = "127.0.0.1", "127.0.0.1"
+        # local port of receiver and sender
+        self.recv_port, self.send_port = 5005, 5006
         # constants that define what protocol to use
         self.protos = [socket.SOCK_DGRAM, # UDP
                        socket.SOCK_STREAM, # TCP
-                       socket.SOCK_DGRAM # LT
+                       socket.SOCK_DGRAM, # LT
+                       socket.SOCK_DGRAM
                        ]
         self.proto = proto
 
         #### DECODING SETUP ####
         self.packetsReceived = 0
         self.packets = []
-        self.file = file # file to write receive information to
+        self.file = filename # file to write receive information to
 
     def runUDP(self, sock):
         """
@@ -56,10 +57,10 @@ class Receiver():
             data, addr = conn.recvfrom(1024) # buffer size is 1024 bytes
             self.packetsReceived += 1
             print(data)
-            data = pickle.loads(data)
-            if not data: # sentinal received
+            data_cpy = pickle.loads(data)
+            if not data_cpy: # sentinal received
                 break
-            self.packets.append(data)
+            self.packets.append(data_cpy)
         self.data = [packet for packet in self.packets]
 
     def runLT(self, sock):
@@ -74,8 +75,10 @@ class Receiver():
             # print 'Received message:', data, '   from ip:', addr[0], 'port:', addr[1]
             self.d.update_belief(data)
             if all(e is not None for e in self.d.belief):
-                print 'Completed decoding'
+                print 'Receiver: Completed decoding'
                 break
+        sock.sendto(pickle.dumps(None), (self.send_ip, self.send_port))
+        sock.close()
         self.data = [data for data in self.d.belief]
 
     def runRQ(self, sock):
@@ -89,12 +92,14 @@ class Receiver():
             loaded_data = pickle.loads(data)
             self.d.symbols[loaded_data[3][0]]=loaded_data[3][1]
             message = 'Not enough data yet...'
-            if self.packetsReceived %100 == 0:
-                message = self.d.decode(pickle.loads(data))
+            if self.packetsReceived %10 == 0:
+                message = self.d.decode(loaded_data)
             if message != 'Not enough data yet...': break
             # print'Received message:', self.d.decode(pickle.loads(data)), '   from ip:', addr[0], 'port:', addr[1]
-        
+        self.data = message
         print'Received message:', message, '   from ip:', addr[0], 'port:', addr[1]
+        sock.sendto(pickle.dumps(None), (self.send_ip, self.send_port))
+        sock.close()
         # print 'numPackets received: ', self.packetsReceived
 
 
@@ -104,10 +109,15 @@ class Receiver():
         Write data received to a file defined by self.file
         Assumes that we have already decoded self.packets to self.data
         """
-        f = open('./resources_received/' + self.file, "w")
-        for data in self.data:
-            f.write(data)
+        f = open('./resources_received/' + self.file, "w+")
+        for i in range(len(self.data) - 1):
+            f.write(self.data[i])
+        # get rid of padding on last block
+        final_data = self.data[len(self.data) - 1]
+        while final_data[-1] == '\0': final_data = final_data[:-1]
+        f.write(final_data)
         print 'Receiver: received {}'.format(self.file)
+        f.close()
 
     def outputStats(self):
         """
@@ -123,11 +133,12 @@ class Receiver():
         sock =  socket.socket(socket.AF_INET,
                            self.protos[self.proto])
         # bind socket to our IP and PORT
-        sock.bind((self.ip, self.port))
-        print "Receiver: Listening at ip {}, port {}".format(self.ip, self.port)
+        sock.bind((self.recv_ip, self.recv_port))
+        print "Receiver: Listening at ip {}, port {}".format(self.recv_ip, self.recv_port)
         if   self.proto == 0: self.runUDP(sock)
         elif self.proto == 1: self.runTCP(sock)
         elif self.proto == 2: self.runLT(sock)
+        elif self.proto == 3: self.runRQ(sock)
 
         self.writeData()
         self.outputStats()
@@ -140,12 +151,10 @@ def parseArgs():
     if (len(sys.argv) < 2):
         print('specify the protocol you want to implement')
         exit(1)
-    if (sys.argv[1] == '-udp'):
-        return 0
-    elif (sys.argv[1] == '-tcp'):
-        return 1
-    elif (sys.argv[1] == '-lt'):
-        return 2
+    if   (sys.argv[1] == '-udp'): return 0
+    elif (sys.argv[1] == '-tcp'): return 1
+    elif (sys.argv[1] == '-lt' ): return 2
+    elif (sys.argv[1] == '-rq'): return 3
     else:
         print('specify the protocol you want to implement as:\n \
              python sender.py [-udp / -tcp ]')
